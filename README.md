@@ -63,6 +63,9 @@ During `process`, the app launches a dedicated persistent Chromium profile with 
 
 ## Extension reconnaissance
 
+After configuring `.env`, run `python inspect_extension.py` to inspect the visible onboarding DOM without clicking any wallet action. The script saves a screenshot under the local data directory's `reconnaissance/` folder. See [`docs/extension-reconnaissance.md`](docs/extension-reconnaissance.md) for the confirmed welcome-screen observations.
+
+
 The extension ID supplied during planning was `iledlaeogohbilgbfhmbgkgmpplbfboh`. Treat this as an unverified configuration value until you confirm the extension publisher and ID in Chrome. The actual onboarding selectors and routes must be inspected against the installed extension version. This initial implementation intentionally avoids brittle guessed selectors.
 
 ## Data locations
