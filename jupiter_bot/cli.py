@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import tempfile
+from pathlib import Path
 from datetime import datetime, timezone
 
 import typer
@@ -167,6 +169,42 @@ def backup():
                 os.remove(temporary)
             except OSError:
                 pass
+        vault.lock()
+
+
+@app.command()
+def restore(file: Path = typer.Option(..., "--file", exists=True, readable=True, dir_okay=False)):
+    """Restore an authenticated encrypted .jwbak database after explicit confirmation."""
+    settings, db, _ = services()
+    vault = Vault(settings.data_dir)
+    vault.initialize_or_unlock()
+    temporary = None
+    try:
+        restored_bytes = vault.decrypt_backup(file.read_bytes())
+        settings.data_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(prefix="jwb-restore-", suffix=".sqlite3", dir=settings.data_dir, delete=False) as temp:
+            temporary = temp.name
+            temp.write(restored_bytes)
+        check = sqlite3.connect(temporary)
+        try:
+            integrity = check.execute("PRAGMA integrity_check").fetchone()[0]
+        finally:
+            check.close()
+        if integrity != "ok":
+            raise ValueError("Backup database failed SQLite integrity check.")
+        if input("This replaces the current wallet database. Type RESTORE to continue: ").strip() != "RESTORE":
+            console.print("Restore cancelled.")
+            return
+        for suffix in ("-wal", "-shm"):
+            sidecar = Path(str(settings.database_path) + suffix)
+            if sidecar.exists():
+                sidecar.unlink()
+        os.replace(temporary, settings.database_path)
+        temporary = None
+        console.print("Database restored. The existing vault.json and master password remain required.")
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.remove(temporary)
         vault.lock()
 
 
