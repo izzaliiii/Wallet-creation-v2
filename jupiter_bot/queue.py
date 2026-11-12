@@ -32,10 +32,17 @@ class QueueManager:
             return conn.execute("SELECT * FROM creation_queue ORDER BY created_at").fetchall()
 
     def recover_interrupted(self) -> int:
+        """Requeue only pre-onboarding PROCESSING work.
+
+        AWAITING_HUMAN and VERIFYING are deliberately left untouched: the user
+        may already have created a wallet before a crash. Replaying those
+        requests automatically could create an unintended second wallet.
+        Reconcile those requests manually before adding a replacement request.
+        """
         timestamp = now()
         with self.db.connect() as conn:
             cur = conn.execute(
-                "UPDATE creation_queue SET status='PENDING', updated_at=?, error_message='Recovered after interrupted run' WHERE status IN ('PROCESSING','AWAITING_HUMAN','VERIFYING')",
+                "UPDATE creation_queue SET status='PENDING', updated_at=?, error_message='Recovered before human onboarding' WHERE status='PROCESSING'",
                 (timestamp,),
             )
             return cur.rowcount
