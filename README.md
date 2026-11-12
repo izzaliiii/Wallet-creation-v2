@@ -58,6 +58,7 @@ During `process`, the app launches a dedicated persistent Chromium profile with 
 | `python main.py retrieve --id ID` | Explicitly decrypt and display a stored secret |
 | `python main.py verify --id ID` | Re-open extension and let the user verify wallet access |
 | `python main.py backup` | Create an encrypted database backup |
+| `python main.py restore --file PATH` | Authenticate and restore an encrypted `.jwbak` backup |
 | `python main.py lock` | Lock the in-memory vault key |
 
 ## Extension reconnaissance
@@ -71,6 +72,7 @@ By default, local data is stored in `.jupiter-wallet-bot/` in the project direct
 - `wallets.sqlite3`: metadata, queue, and encrypted credential records
 - `browser-profile/`: dedicated Chromium profile (contains session data; keep private)
 - `backups/`: encrypted database backup files
+- `vault.json`: Argon2id salt and encrypted verifier; required with the master password to unlock backups
 
 ## Tests
 
