@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import getpass
-import shutil
 import sqlite3
+import tempfile
 from datetime import datetime, timezone
-from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -32,7 +30,7 @@ def services():
 @app.command()
 def start():
     """Initialize local storage and validate basic configuration."""
-    settings, db, _ = services()
+    settings, _, _ = services()
     console.print(f"[green]Database initialized:[/green] {settings.database_path}")
     console.print(f"Extension path configured: {bool(settings.extension_path)}")
     console.print(f"Extension ID: {settings.extension_id} (verify publisher and ID manually)")
@@ -41,8 +39,8 @@ def start():
 @app.command()
 def add(name: str = typer.Option(..., "--name", prompt=True), network: str = typer.Option("Solana", "--network")):
     """Add a wallet request to the sequential creation queue."""
-    _, _, queue = services()
-    request_id = queue.add(name, network)
+    _, _, manager = services()
+    request_id = manager.add(name, network)
     console.print(f"Queued [bold]{name}[/bold] with ID {request_id}")
 
 
@@ -114,9 +112,8 @@ def retrieve(id: str = typer.Option(..., "--id")):
             return
         for row in rows:
             secret = vault.decrypt(row["ciphertext"], row["nonce"], row["wallet_id"], row["secret_type"])
-            console.print(f"\n{row['secret_type']} (keep private):")
+            console.print(f"\\n{row['secret_type']} (keep private):")
             console.print(secret, markup=False)
-            secret = ""
     finally:
         vault.lock()
 
@@ -140,24 +137,40 @@ def verify(id: str = typer.Option(..., "--id")):
 
 @app.command()
 def backup():
-    """Create a backup of the local database; encrypted secrets remain ciphertext."""
+    """Create an AES-256-GCM encrypted SQLite backup."""
     settings, db, _ = services()
+    vault = Vault(settings.data_dir)
+    vault.initialize_or_unlock()
     settings.backup_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    target = settings.backup_dir / f"wallets-{stamp}.sqlite3"
-    with db.connect() as conn:
-        destination = sqlite3.connect(target)
-        conn.backup(destination)
-        destination.close()
+    target = settings.backup_dir / f"wallets-{stamp}.jwbak"
+    temporary = None
     try:
-        target.chmod(0o600)
-    except OSError:
-        pass
-    console.print(f"Backup created: {target}")
-    console.print("The backup contains encrypted credential ciphertext. Protect this file and the vault header.")
+        with tempfile.NamedTemporaryFile(prefix="jwb-", suffix=".sqlite3", dir=settings.backup_dir, delete=False) as temp:
+            temporary = temp.name
+        with db.connect() as source:
+            destination = sqlite3.connect(temporary)
+            source.backup(destination)
+            destination.close()
+        encrypted = vault.encrypt_backup(open(temporary, "rb").read())
+        target.write_bytes(encrypted)
+        try:
+            target.chmod(0o600)
+        except OSError:
+            pass
+        console.print(f"Encrypted backup created: {target}")
+        console.print("Keep vault.json and the master password. Both are required to restore and decrypt this backup.")
+    finally:
+        if temporary:
+            try:
+                import os
+                os.remove(temporary)
+            except OSError:
+                pass
+        vault.lock()
 
 
 @app.command()
 def lock():
-    """Confirm vault locking; vault keys are only held in process memory."""
-    console.print("Vault keys are not persisted between commands; the process-local vault is already locked.")
+    """Vault keys are only held in process memory and are cleared when each command exits."""
+    console.print("Vault is locked; no key is persisted between CLI commands.")
