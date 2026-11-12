@@ -11,6 +11,16 @@
 - Secondary action: "Import an existing wallet"
 - Additional link: "Sync wallets"
 
+## Installation identity supplied by the user
+
+- Installed version reported in Chrome: `1.20.2`
+- Developer website supplied by the user: [https://jup.ag/](https://jup.ag/)
+- Publisher cross-check: the Chrome Web Store listing for this exact extension ID identifies the listed website as `jup.ag`. The listing currently indexed by search may show an older version than the locally installed copy, so the local Chrome Extensions page is the source of truth for the user's installed version.
+
+References:
+- [Jupiter Wallet official page](https://jup.ag/wallet)
+- [Chrome Web Store listing](https://chromewebstore.google.com/detail/jupiter-wallet/iledlaeogohbilgbfhmbgkgmpplbfboh)
+
 ## Scope decision
 
 The current workflow covers creating a new personal wallet only. Import and sync are separate flows and are not automated by this project.
