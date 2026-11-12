@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 from .security import decrypt_secret, derive_key, encrypt_secret, new_salt
 
 
@@ -80,3 +82,12 @@ class Vault:
             raise RuntimeError("Vault is locked.")
         aad = f"{wallet_id}:{secret_type}".encode()
         return decrypt_secret(self._key, ciphertext, nonce, aad)
+
+    def encrypt_backup(self, database_bytes: bytes) -> bytes:
+        """Encrypt an entire SQLite backup; format = magic + nonce + AES-GCM ciphertext."""
+        if not self._key:
+            raise RuntimeError("Vault is locked.")
+        nonce = os.urandom(12)
+        return b"JWB1" + nonce + AESGCM(self._key).encrypt(
+            nonce, database_bytes, b"jupiter-wallet-bot-database-backup-v1"
+        )
