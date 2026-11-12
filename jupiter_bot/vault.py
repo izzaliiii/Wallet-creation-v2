@@ -91,3 +91,14 @@ class Vault:
         return b"JWB1" + nonce + AESGCM(self._key).encrypt(
             nonce, database_bytes, b"jupiter-wallet-bot-database-backup-v1"
         )
+
+    def decrypt_backup(self, backup_bytes: bytes) -> bytes:
+        """Authenticate and decrypt a JWB1 database backup."""
+        if not self._key:
+            raise RuntimeError("Vault is locked.")
+        if len(backup_bytes) < 32 or backup_bytes[:4] != b"JWB1":
+            raise ValueError("Invalid or unsupported backup file.")
+        nonce, ciphertext = backup_bytes[4:16], backup_bytes[16:]
+        return AESGCM(self._key).decrypt(
+            nonce, ciphertext, b"jupiter-wallet-bot-database-backup-v1"
+        )
