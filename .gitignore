@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.env
+.jupiter-wallet-bot/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.bak
+browser-profile/
+playwright/.cache/
