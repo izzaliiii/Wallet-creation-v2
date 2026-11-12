@@ -3,7 +3,10 @@
 ## Confirmed from the user's Chrome screenshot
 
 - Product label: Jupiter Wallet
-- Extension ID shown in the address bar: `iledlaeogohbilgbfhmbgkgmpplbfboh`
+- Extension ID shown in the address bar and confirmed in the installed profile: `iledlaeogohbilgbfhmbgkgmpplbfboh`
+- Installed Chrome profile: `Profile 14` (local machine only; do not copy this profile into the repository)
+- Installed extension directory: `Extensions/iledlaeogohbilgbfhmbgkgmpplbfboh/1.20.2_0`
+- Installed manifest name/version/manifest version: `Jupiter Wallet` / `1.20.2` / `3` (confirmed from the user's local `manifest.json`)
 - Route: `chrome-extension://iledlaeogohbilgbfhmbgkgmpplbfboh/popup.html#/onboard`
 - Welcome heading: "Welcome to Jupiter Wallet"
 - Subtitle: "Your personal portal into Solana"
