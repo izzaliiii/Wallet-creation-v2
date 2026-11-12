@@ -20,3 +20,14 @@ def test_interrupted_queue_recovers(tmp_path):
     queue.claim_next()
     assert queue.recover_interrupted() == 1
     assert queue.list()[0]["status"] == "PENDING"
+
+def test_awaiting_human_is_not_replayed_after_restart(tmp_path):
+    db = Database(tmp_path / "test.sqlite3")
+    db.initialize()
+    queue = QueueManager(db)
+    queue.add("Human checkpoint", "Solana")
+    queue.claim_next()
+    request_id = queue.list()[0]["id"]
+    queue.set_status(request_id, "AWAITING_HUMAN")
+    assert queue.recover_interrupted() == 0
+    assert queue.list()[0]["status"] == "AWAITING_HUMAN"
